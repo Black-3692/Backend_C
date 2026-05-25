@@ -33,7 +33,9 @@ void read_buffer(int client_socket) {
         buffer[bytes] = '\0';
 
         // Paresing the buffer and getting the HTTP method and the Path
-        parse_buffer(buffer);
+        RequestContext context;
+        context.client_socket = client_socket;
+        parse_buffer(buffer, &context);
     }
 } 
 
