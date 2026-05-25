@@ -4,6 +4,7 @@
 
 #include "./server.h"
 #include "../parser/parser.h"
+#include "../routes/routes.h"
 // Function used to read the incoming data from the client socket.
 // The client sends an HTTP request to the server.
 // This function reads that request and stores it inside a buffer.
@@ -32,6 +33,7 @@ void read_buffer(int client_socket, RequestContext *context) {
         // This converts raw bytes into a valid string.
         buffer[bytes] = '\0';
         parse_buffer(buffer, context);
+        handle_route(context);
     }
 } 
 
