@@ -1,4 +1,4 @@
-#include "server.h"
+#include "./server/server.h"
 
 int main() {
     create_server(8080, 5);

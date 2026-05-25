@@ -1,6 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#include "../context/context.h"
 // Function used to create and start the server.
 //
 // port  -> Port number where the server will run.
@@ -22,15 +23,6 @@ void create_server(int port, int queue);
 //
 // This function reads the HTTP request
 // sent by the client/browser.
-void read_buffer(int client_socket);
+void read_buffer(int client_socket, RequestContext *context);
 
-// Function used to parse the HTTP request buffer.
-//
-// buffer -> Contains the complete HTTP request
-//           received from the client.
-//
-// This function extracts:
-// 1. HTTP Method
-// 2. Requested Route/Path
-void parse_buffer(char *buffer);
 #endif

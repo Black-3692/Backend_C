@@ -2,15 +2,15 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#include "server.h"
-
+#include "./server.h"
+#include "../parser/parser.h"
 // Function used to read the incoming data from the client socket.
 // The client sends an HTTP request to the server.
 // This function reads that request and stores it inside a buffer.
 //
 // client_socket - Socket returned by accept().
 // It represents the connected client.
-void read_buffer(int client_socket) {
+void read_buffer(int client_socket, RequestContext *context) {
     // Character array used to store incoming request data.
     // 4096 bytes means the server can read up to 4 KB of data at once.
     char buffer[4096];
@@ -31,58 +31,9 @@ void read_buffer(int client_socket) {
         // Add null character at the end of received data.
         // This converts raw bytes into a valid string.
         buffer[bytes] = '\0';
-
-        // Paresing the buffer and getting the HTTP method and the Path
-        RequestContext context;
-        context.client_socket = client_socket;
-        parse_buffer(buffer, &context);
+        parse_buffer(buffer, context);
     }
 } 
-
-// Function used to extract important information
-// from the HTTP request buffer.
-//
-// buffer -> Contains the complete HTTP request
-//           received from the client/browser.
-//
-// Example request:
-//
-// GET /users HTTP/1.1
-// Host: localhost:8080
-//
-// This function extracts:
-// 1. HTTP Method  -> GET, POST, PUT, DELETE
-// 2. Route/Path   -> /, /users, /login
-void parse_buffer(char *buffer) {
-
-    // Stores the HTTP method.
-    // Example: GET, POST
-    char method[10];
-
-    // Stores the requested route/path.
-    // Example: /users
-    char path[100];
-
-    // sscanf() reads formatted data from the buffer.
-    //
-    // "%s %s":
-    // First %s  -> Reads method
-    // Second %s -> Reads path
-    //
-    // From:
-    // GET /users HTTP/1.1
-    //
-    // It extracts:
-    // method = GET
-    // path = /users
-    sscanf(buffer, "%s %s", method, path);
-
-    // Print extracted HTTP method.
-    printf("Method: %s\n", method);
-
-    // Print extracted route/path.
-    printf("Path: %s\n", path);
-}
 
 void create_server(int port, int queue) {
     // Server socket
@@ -151,10 +102,16 @@ void create_server(int port, int queue) {
             printf("Client connection failed ...");
             continue;
         }
-       
-        // Reading the buffer
-        read_buffer(client_socket);
+        
+        RequestContext context;
 
+        context.client_socket = client_socket;
+        // Reading the buffer
+        read_buffer(client_socket, &context);
+        // temp print
+        printf("Method: %s", context.method);
+        printf("\nPath: %s", context.path);
+        printf("\nVersion: %s", context.version);
         // Closing the client socket
         close(client_socket);
     }
