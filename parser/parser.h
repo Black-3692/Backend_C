@@ -1,10 +1,19 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "../context/context.h"
+typedef struct {
+    int client_socket;
 
-// 
-// Parser the raw HTTP request buffer and fills the RequestContext
-//
-void parse_buffer(char *buffer, RequestContext *context);
+    char *method;
+    char *path;
+    char *version;
+
+    char *headers;
+    char *body;
+} RequestContext;
+
+RequestContext *parser_request(char *raw_request, int client_socket);
+
+void free_request_contest(RequestContext *context);
+
 #endif

@@ -4,8 +4,31 @@
 #include <arpa/inet.h>
 
 #include "./server.h"
+#include "../parser/parser.h"
+
+#define MAX_BUFFER 8192
 
 static Server server;
+
+static void read_request(int client_socket) {
+    char buffer[MAX_BUFFER];
+
+    int bytes_read = recv(client_socket, buffer, MAX_BUFFER - 1, 0);
+
+    if(bytes_read <= 0) {
+        return;
+    }
+
+    buffer[bytes_read] = '\0';
+
+    RequestContext *context = parser_request(buffer, client_socket);
+
+    printf("Method: %s\n", context->method);
+    printf("Path: %s\n", context->path);
+    printf("Version: %s\n", context->version);
+    
+    free(context);
+}
 
 int server_init(int port, int queue_size) {
     server.port = port;
@@ -57,8 +80,8 @@ void server_start(void) {
             perror("accept");
             continue;
         }
-
-        printf("Client connected\n");
+        
+        read_request(client_socket);
         close(client_socket);
     }
 }
