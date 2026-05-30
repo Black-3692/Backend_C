@@ -3,8 +3,11 @@
 
 typedef struct {
     int client_socket;
+    int status_code;
 } Response;
 
-void send(Response *res, char *data);
+void res_status(Response *res, int status_code);
+
+void res_send(Response *res, const char *content);
 
 #endif
