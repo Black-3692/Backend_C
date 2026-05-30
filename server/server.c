@@ -1,123 +1,64 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <arpa/inet.h>
 
 #include "./server.h"
-#include "../parser/parser.h"
-#include "../routes/routes.h"
-// Function used to read the incoming data from the client socket.
-// The client sends an HTTP request to the server.
-// This function reads that request and stores it inside a buffer.
-//
-// client_socket - Socket returned by accept().
-// It represents the connected client.
-void read_buffer(int client_socket, RequestContext *context) {
-    // Character array used to store incoming request data.
-    // 4096 bytes means the server can read up to 4 KB of data at once.
-    char buffer[4096];
-    
-    // read() is used to receive data from the client socket.
-    //
-    // client_socket       -> Connected client socket
-    // buffer              -> Memory location where data is stored
-    // sizeof(buffer) - 1  -> Maximum number of bytes to read
-    //
-    // We use -1 to leave space for '\0'
-    // so the buffer can become a proper C string.
-    int bytes = read(client_socket, buffer, sizeof(buffer) - 1);
 
-    // If bytes > 0:
-    // Data was successfully received from the client.
-    if(bytes > 0) {
-        // Add null character at the end of received data.
-        // This converts raw bytes into a valid string.
-        buffer[bytes] = '\0';
-        parse_buffer(buffer, context);
-        handle_route(context);
-    }
-} 
+static Server server;
 
-void create_server(int port, int queue) {
-    // Server socket
-    int server_socket;
+int server_init(int port, int queue_size) {
+    server.port = port;
+    server.queue_size = queue_size;
+    server.is_running = 0;
 
-    // Client socket
-    int client_socket;
+    server.server_fd = socket(AF_INET, SOCK_STREAM, 0);
 
-    // Server address
-    struct sockaddr_in socket_address;
-
-    // Creating server socket
-    server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    // AF_INET - It has the IPv4 address
-    // SOCK_STREAM - Tells that tcp connection
-    // 0 - represents the default protocol (TCP)
-
-    if(server_socket < 0) {
-        printf("Socket Creation Failed ...");
-        return;
+    if(server.server_fd < 0) {
+        perror("socket");
+        return -1;
     }
 
-    // Configure server
-    socket_address.sin_family = AF_INET;
-    socket_address.sin_port = htons(port);
-    socket_address.sin_addr.s_addr = INADDR_ANY;
-    // sin_family - stores the IPv4 address
-    // sin_port - stores the port
-    // htons(port) - It is used to convert the integer into an network byte order
-    // sin_addr - contains the IP address structure
-    // s_addr - contains the actual IP address
-    // INADDR_ANY - Accepts all the request from different IP
-    // Later it will be modified
-    
-    // Bind socket
-    int bind_check;
+    server.address.sin_family = AF_INET;
+    server.address.sin_addr.s_addr = INADDR_ANY;
+    server.address.sin_port = htons(port);
 
-    bind_check = bind(server_socket, (struct sockaddr *)&socket_address, sizeof(socket_address));
-    // bind - used to bind the IP address and then port
-
-    if(bind_check < 0) {
-        printf("Binding Failed ...");
-        return;
+    if(
+            bind ( server.server_fd, 
+                (struct sockaddr *)&server.address,
+                sizeof(server.address)
+            )  < 0
+    ) {
+        perror("bind");
+        return -1;
     }
 
-    // Listen to the port
-    int listen_check;
-    
-    // listen - used to accept the clients connection
-    listen_check = listen(server_socket, queue);
-    
-    if(listen_check < 0) {
-        printf("Listining Failed ...");
-        return;
+    if(
+            listen(server.server_fd, queue_size) < 0
+      )
+    {
+        perror("listen");
+        return -1;
     }
 
-    printf("Server running on the port %d\n", port);
-    printf("Queue size is %d\n", queue);
+    printf("Server listening on the port %d\n", port);
 
-    // Infinite loop
-    while(1) {
-        // Accept client
-        client_socket = accept(server_socket, NULL, NULL);
+    return 0;
+}
 
+void server_start(void) {
+    server.is_running = 1;
+    printf("Starting the process of starting the server\n");
+    while(server.is_running) {
+        int client_socket;
+
+        client_socket = accept(server.server_fd, NULL, NULL);
         if(client_socket < 0) {
-            printf("Client connection failed ...");
+            perror("accept");
             continue;
         }
-        
-        RequestContext context;
 
-        context.client_socket = client_socket;
-        // Reading the buffer
-        read_buffer(client_socket, &context);
-        // temp print
-        printf("Method: %s", context.method);
-        printf("\nPath: %s", context.path);
-        printf("\nVersion: %s", context.version);
-        // Closing the client socket
+        printf("Client connected\n");
         close(client_socket);
     }
-    
-    // Closing the server socket
-    close(server_socket);
 }

@@ -84,37 +84,50 @@ void del(char *path, RouteHandler handler) {
 }
 
 void handle_route(RequestContext *context) {
-    if(strcmp(context->method, "GET") == 0) {
-        for(int i=0; i < get_count; i++) {
-            if(strcmp(context->path, get_routes[i].path) == 0) {
-                get_routes[i].handler(context);
+
+    if(strcmp(context->req.method, "GET") == 0) {
+
+        for(int i = 0; i < get_count; i++) {
+
+            if(strcmp(context->req.path, get_routes[i].path) == 0) {
+
+                get_routes[i].handler(&context->req, &context->res);
                 return;
             }
         }
     }
 
-    if(strcmp(context->method, "POST") == 0) {
-        for(int i=0; i < post_count; i++) {
-            if(strcmp(context->path, post_routes[i].path) == 0) {
-                post_routes[i].handler(context);
+    if(strcmp(context->req.method, "POST") == 0) {
+
+        for(int i = 0; i < post_count; i++) {
+
+            if(strcmp(context->req.path, post_routes[i].path) == 0) {
+
+                post_routes[i].handler(&context->req, &context->res);
                 return;
             }
         }
     }
 
-    if(strcmp(context->method, "PUT") == 0) {
-        for(int i=0; i < put_count; i++) {
-            if(strcmp(context->path, put_routes[i].path) == 0) {
-                put_routes[i].handler(context);
+    if(strcmp(context->req.method, "PUT") == 0) {
+
+        for(int i = 0; i < put_count; i++) {
+
+            if(strcmp(context->req.path, put_routes[i].path) == 0) {
+
+                put_routes[i].handler(&context->req, &context->res);
                 return;
             }
         }
     }
 
-    if(strcmp(context->method, "DELETE") == 0) {
-        for(int i=0; i < del_count; i++) {
-            if(strcmp(context->path, del_routes[i].path) == 0) {
-                del_routes[i].handler(context);
+    if(strcmp(context->req.method, "DELETE") == 0) {
+
+        for(int i = 0; i < del_count; i++) {
+
+            if(strcmp(context->req.path, del_routes[i].path) == 0) {
+
+                del_routes[i].handler(&context->req, &context->res);
                 return;
             }
         }

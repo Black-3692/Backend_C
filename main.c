@@ -1,12 +1,10 @@
 #include "./server/server.h"
-#include "./handlers/handler.h"
-#include "./routes/routes.h"
 
 int main() {
-    // create_server(8080, 5);
-    init_routes(10, 10, 10, 10);
-    get("/", home_page);
+    if(server_init(3000, 5) != 0) {
+        return 1;
+    }
 
-    create_server(8080, 5);
+    server_start();
     return 0;
 }
