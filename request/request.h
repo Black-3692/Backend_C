@@ -2,9 +2,24 @@
 #define REQUEST_H
 
 typedef struct {
-    char method[10];
-    char path[500];
-    char body[1000];
+    char *key;
+    char *value;
+} KeyValue;
+
+typedef struct {
+    char *body;
+
+    KeyValue *params;
+    int params_count;
+    
+    KeyValue *query;
+    int query_count;
 } Request;
+
+char *get_req_param(Request *req, const char *key);
+
+char *get_req_query(Request *req, const char *key);
+
+void free_request(Request *req);
 
 #endif
