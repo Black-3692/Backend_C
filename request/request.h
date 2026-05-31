@@ -7,6 +7,11 @@ typedef struct {
 } KeyValue;
 
 typedef struct {
+    char *method;
+    char *path;
+    char *version;
+
+    char *headers;
     char *body;
 
     KeyValue *params;

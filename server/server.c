@@ -5,6 +5,9 @@
 
 #include "./server.h"
 #include "../parser/parser.h"
+#include "../request/request.h"
+#include "../response/response.h"
+#include "../routes/routes.h"
 
 #define MAX_BUFFER 8192
 
@@ -21,13 +24,24 @@ static void read_request(int client_socket) {
 
     buffer[bytes_read] = '\0';
 
-    RequestContext *context = parser_request(buffer, client_socket);
+    Request *request = parser_request(buffer);
 
-    printf("Method: %s\n", context->method);
-    printf("Path: %s\n", context->path);
-    printf("Version: %s\n", context->version);
-    
-    free(context);
+    Response response;
+    response.client_socket = client_socket;
+    response.status_code = 200;
+
+    Route *route = find_routes(request->method, request->path);
+
+    if(route == NULL) {
+        res_status(&response, 404);
+        res_send(&response, "Not Found");
+    }
+
+    else {
+        route->handler(request, &response);
+    }
+
+    free_request(request); 
 }
 
 int server_init(int port, int queue_size) {

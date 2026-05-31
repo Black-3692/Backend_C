@@ -4,26 +4,35 @@
 
 #include "./parser.h"
 
-RequestContext *parser_request(char *raw_request, int client_socket) {
-    RequestContext *context = malloc(sizeof(RequestContext));
+static void request_init(Request *request) {
+    request->method = NULL;
+    request->path = NULL;
+    request->version = NULL;
 
-    if(context == NULL) {
+    request->headers = NULL;
+    request->body = NULL;
+
+    request->params = NULL;
+    request->params_count = 0;
+
+    request->query = NULL;
+    request->query_count = 0;
+}
+
+Request *parser_request(char *raw_request) {
+    Request *request = malloc(sizeof(Request));
+
+    if(request == NULL) {
         return NULL;
     }
 
-    context->client_socket = client_socket;
-    context->method = NULL;
-    context->path = NULL;
-    context->version = NULL;
-
-    context->headers = NULL;
-    context->body = NULL;
+    request_init(request);
 
     char *request_copy = strdup(raw_request);
 
     if(request_copy == NULL) {
         free(request_copy);
-        free(context);
+        free(request);
         return NULL;
     }
 
@@ -31,7 +40,7 @@ RequestContext *parser_request(char *raw_request, int client_socket) {
 
     if(line == NULL) {
         free(request_copy);
-        free(context);
+        free(request);
 
         return NULL;
     }
@@ -41,28 +50,17 @@ RequestContext *parser_request(char *raw_request, int client_socket) {
     char *version = strtok(NULL, " ");
 
     if(method != NULL) {
-        context->method = strdup(method);
+        request->method = strdup(method);
     }
 
     if(path != NULL) {
-        context->path = strdup(path);
+        request->path = strdup(path);
     }
 
     if(version != NULL) {
-        context->version = strdup(version);
+        request->version = strdup(version);
     }
 
     free(request_copy);
-    return context;
-}
-
-void free_request_context(RequestContext *context) {
-    free(context->method);
-    free(context->path);
-    free(context->version);
-
-    free(context->headers);
-    free(context->body);
-
-    free(context);
+    return request;
 }

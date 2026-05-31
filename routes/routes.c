@@ -1,137 +1,137 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "./routes.h"
 
-// Route table for each method
 Route *get_routes = NULL;
 Route *post_routes = NULL;
 Route *put_routes = NULL;
 Route *del_routes = NULL;
 
-// Stored the number of registered routes
+int get_capacity = 0;
+int post_capicity = 0;
+int put_capicity = 0;
+int del_capicity = 0;
+
 int get_count = 0;
 int post_count = 0;
 int put_count = 0;
 int del_count = 0;
 
-// Maximum route capicity
-int get_capicity = 0;
-int post_capicity = 0;
-int put_capicity = 0;
-int del_capicity = 0;
+static void register_routes(Route **routes, int *count, int *capicity, const char *path, RouteHandler handler) {
+    if(*count >= *capicity) {
+        *capicity = (*capicity == 0) ? 4 : (*capicity * 2);
+        
+        Route *temp = realloc(*routes, sizeof(Route) * (*capicity));
 
-// Initializes the route tables
-void init_routes(int get_cap, int post_cap, int put_cap, int del_cap) {
-    get_capicity = get_cap;
-    post_capicity = post_cap;
-    put_capicity = put_cap;
-    del_capicity = del_cap;
-
-    get_routes = malloc(sizeof(Route) * get_capicity);
-    post_routes = malloc(sizeof(Route) * post_capicity);
-    put_routes = malloc(sizeof(Route) * put_capicity);
-    del_routes = malloc(sizeof(Route) * del_capicity);
-}
-
-void get(char *path, RouteHandler handler) {
-    // Preventing the route overflow
-    if(get_count >= get_capicity) {
-        printf("The limit exceeded for the get ...");
-        return;
+        if(temp == NULL) {
+            exit(EXIT_FAILURE);
+        }
+    
+        *routes = temp;
     }
 
-    strcpy(get_routes[get_count].path, path);
-    get_routes[get_count].handler = handler;
-    get_count++;
+    (*routes)[*count].path = strdup(path);
+    (*routes)[*count].handler = handler;
+
+    (*count)++;
 }
 
-void post(char *path, RouteHandler handler) {
-    // Preventing the route overflow
-    if(post_count >= post_capicity) {
-        printf("The limit exceeded for the post ...");
-        return;
-    }
-
-    strcpy(post_routes[post_count].path, path);
-    post_routes[post_count].handler = handler;
-    post_count++;
-}
-
-void put(char *path, RouteHandler handler) {
-    // Preventing the route overflow
-    if(put_count >= put_capicity) {
-        printf("The limit exceeded for the put ...");
-        return;
-    }
-
-    strcpy(put_routes[put_count].path, path);
-    put_routes[put_count].handler = handler;
-    post_count++;
-}
-
-void del(char *path, RouteHandler handler) {
-    // Preventing the route overflow
-    if(del_count >= del_capicity) {
-        printf("The limit exceeded for the delete ...");
-        return;
-    }
-
-    strcpy(del_routes[del_count].path, path);
-    del_routes[del_count].handler = handler;
-    del_count++;
-}
-
-void handle_route(RequestContext *context) {
-
-    if(strcmp(context->req.method, "GET") == 0) {
-
-        for(int i = 0; i < get_count; i++) {
-
-            if(strcmp(context->req.path, get_routes[i].path) == 0) {
-
-                get_routes[i].handler(&context->req, &context->res);
-                return;
-            }
+static Route *search_route(Route *routes, int count, const char *path) {
+    for(int i=0; i < count; i++) {
+        if(strcmp(routes[i].path, path) == 0) {
+            return &routes[i];
         }
     }
 
-    if(strcmp(context->req.method, "POST") == 0) {
-
-        for(int i = 0; i < post_count; i++) {
-
-            if(strcmp(context->req.path, post_routes[i].path) == 0) {
-
-                post_routes[i].handler(&context->req, &context->res);
-                return;
-            }
-        }
-    }
-
-    if(strcmp(context->req.method, "PUT") == 0) {
-
-        for(int i = 0; i < put_count; i++) {
-
-            if(strcmp(context->req.path, put_routes[i].path) == 0) {
-
-                put_routes[i].handler(&context->req, &context->res);
-                return;
-            }
-        }
-    }
-
-    if(strcmp(context->req.method, "DELETE") == 0) {
-
-        for(int i = 0; i < del_count; i++) {
-
-            if(strcmp(context->req.path, del_routes[i].path) == 0) {
-
-                del_routes[i].handler(&context->req, &context->res);
-                return;
-            }
-        }
-    }
-
-    printf("404 Route not found ...");
+    return NULL;
 }
+
+static Route *find_route(const char *method, const char *path) {
+    if(strcmp(method, "GET") == 0) {
+        return search_route (get_routes, get_count, path);
+    }
+
+    if(strcmp(method, "POST") == 0) {
+        return search_route (post_routes, post_count, path);
+    }
+
+    if(strcmp(method, "PUT") == 0) {
+        return search_route(put_routes, put_count, path);
+    }
+
+    if(strcmp(method, "DELETE") == 0) {
+        return search_route(del_routes, del_count, path);
+    }
+
+    return NULL;
+}
+
+void get(const char *path, RouteHandler handler) {
+    register_routes (
+        &get_routes,
+        &get_count,
+        &get_capacity,
+        path,
+        handler
+    );
+}
+
+void post(const char *path, RouteHandler handler) {
+    register_routes (
+        &post_routes,
+        &post_count,
+        &post_capicity,
+        path,
+        handler
+    );
+}
+
+void put(const char *path, RouteHandler handler) {
+    register_routes (
+        &put_routes,
+        &put_count,
+        &put_capicity,
+        path,
+        handler
+    );
+}
+
+void del(const char *path, RouteHandler handler) {
+    register_routes (
+        &del_routes,
+        &del_count,
+        &del_capicity,
+        path,
+        handler
+    );
+}
+
+Route *find_routes(const char *method, const char *path) {
+    return find_route(method, path);
+}
+
+void routes_cleanup(void) {
+    int i;
+
+    for(i=0; i < get_count; i++) {
+        free(get_routes[i].path);
+    }
+
+    for(i=0; i < post_count; i++) {
+        free(post_routes[i].path);
+    }
+
+    for(i=0; i < put_count; i++) {
+        free(put_routes[i].path);
+    }
+
+    for(i=0; i < del_count; i++) {
+        free(del_routes[i].path);
+    }
+
+    free(get_routes);
+    free(post_routes);
+    free(put_routes);
+    free(del_routes);
+} 

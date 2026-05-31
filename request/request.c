@@ -36,6 +36,11 @@ void free_request(Request *req) {
         return;
     }
 
+    free(req->method);
+    free(req->path);
+    free(req->version);
+
+    free(req->headers);
     free(req->body);
 
     for(int i=0; i < req->params_count; i++) {

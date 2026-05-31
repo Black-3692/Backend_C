@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <string.h>
 
 #include "./response.h"
 
@@ -32,16 +33,16 @@ static const char *get_status_text(int status_code) {
             return "Not Found";
 
         case 500:
-            return iInternal Server Error";
+            return "Internal Server Error";
 
         default:
             return "Ok";
     }
 }
 
-void res_send(Request *req, const char *content) {
+void res_send(Response *res, const char *content) {
     if(res == NULL || content == NULL) {
-        return NULL;
+        return;
     }
     
     if(res->status_code == 0) {
